@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Task Manager</title>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg-page:       #f5f4f1;
+      --bg-card:       #ffffff;
+      --bg-secondary:  #f0efe9;
+      --bg-info:       #e6f1fb;
+      --bg-success:    #eaf3de;
+      --bg-warning:    #faeeda;
+      --bg-danger:     #fcebeb;
+
+      --text-primary:   #1a1a18;
+      --text-secondary: #6b6a64;
+      --text-tertiary:  #a09f99;
+      --text-info:      #0c447c;
+      --text-success:   #27500a;
+      --text-warning:   #633806;
+      --text-danger:    #791f1f;
+
+      --border:         rgba(0,0,0,0.10);
+      --border-hover:   rgba(0,0,0,0.20);
+      --border-info:    rgba(24,95,165,0.35);
+      --border-danger:  rgba(163,45,45,0.35);
+
+      --radius-md: 8px;
+      --radius-lg: 12px;
+
+      --font: 'DM Sans', system-ui, sans-serif;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-page:       #18181a;
+        --bg-card:       #222224;
+        --bg-secondary:  #2a2a2c;
+        --bg-info:       #042c53;
+        --bg-success:    #173404;
+        --bg-warning:    #412402;
+        --bg-danger:     #501313;
+
+        --text-primary:   #f0efe9;
+        --text-secondary: #a09f99;
+        --text-tertiary:  #6b6a64;
+        --text-info:      #85b7eb;
+        --text-success:   #97c459;
+        --text-warning:   #ef9f27;
+        --text-danger:    #f09595;
+
+        --border:         rgba(255,255,255,0.10);
+        --border-hover:   rgba(255,255,255,0.20);
+        --border-info:    rgba(133,183,235,0.35);
+        --border-danger:  rgba(240,149,149,0.35);
+      }
+    }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg-page);
+      color: var(--text-primary);
+      min-height: 100vh;
+      padding: 2.5rem 1rem;
+    }
+
+    .container {
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    /* ── Header ── */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.5rem;
+    }
+
+    .header h1 {
+      font-size: 22px;
+      font-weight: 500;
+    }
+
+    /* ── Buttons ── */
+    button {
+      font-family: var(--font);
+      cursor: pointer;
+      border-radius: var(--radius-md);
+      border: 0.5px solid var(--border-hover);
+      background: transparent;
+      color: var(--text-primary);
+      font-size: 13px;
+      padding: 7px 14px;
+      transition: background 0.15s, opacity 0.15s;
+    }
+
+    button:hover { background: var(--bg-secondary); }
+    button:active { transform: scale(0.98); }
+
+    button.primary {
+      background: var(--bg-info);
+      border-color: var(--border-info);
+      color: var(--text-info);
+    }
+    button.primary:hover { opacity: 0.85; background: var(--bg-info); }
+
+    button.danger {
+      color: var(--text-danger);
+      border-color: var(--border-danger);
+    }
+    button.danger:hover { background: var(--bg-danger); }
+
+    button.small { padding: 4px 10px; font-size: 12px; }
+
+    /* ── Form card ── */
+    .form-card {
+      background: var(--bg-card);
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1rem 1.25rem;
+      margin-bottom: 1.25rem;
+      display: none;
+    }
+
+    .form-card.open { display: block; }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr auto;
+      gap: 10px;
+      align-items: end;
+    }
+
+    @media (max-width: 560px) {
+      .form-row { grid-template-columns: 1fr 1fr; }
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .field label {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    /* ── Inputs / selects ── */
+    input[type="text"],
+    input[type="date"],
+    select {
+      font-family: var(--font);
+      font-size: 13px;
+      border: 0.5px solid var(--border-hover);
+      border-radius: var(--radius-md);
+      padding: 7px 10px;
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      width: 100%;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    input:focus,
+    select:focus {
+      border-color: var(--border-info);
+      box-shadow: 0 0 0 3px rgba(24,95,165,0.12);
+    }
+
+    /* ── Stats ── */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 1.25rem;
+    }
+
+    .stat {
+      background: var(--bg-card);
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 0.875rem 1rem;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+    }
+
+    .stat-num {
+      font-size: 22px;
+      font-weight: 500;
+    }
+
+    /* ── Task list ── */
+    .task-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .empty {
+      text-align: center;
+      padding: 3rem;
+      color: var(--text-tertiary);
+      font-size: 14px;
+      background: var(--bg-card);
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius-lg);
+    }
+
+    .task-card {
+      background: var(--bg-card);
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 0.875rem 1.125rem;
+      display: grid;
+      grid-template-columns: 1fr auto auto auto;
+      align-items: center;
+      gap: 12px;
+      transition: border-color 0.15s;
+    }
+
+    .task-card:hover { border-color: var(--border-hover); }
+
+    .task-name {
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .task-name-input {
+      font-size: 14px;
+      font-weight: 500;
+      padding: 4px 8px;
+      width: 100%;
+      border: 0.5px solid var(--border-hover);
+      border-radius: var(--radius-md);
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      font-family: var(--font);
+      outline: none;
+    }
+
+    .task-name-input:focus {
+      border-color: var(--border-info);
+      box-shadow: 0 0 0 3px rgba(24,95,165,0.12);
+    }
+
+    .task-due {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-top: 3px;
+    }
+
+    .task-due-input {
+      font-size: 12px;
+      margin-top: 4px;
+      padding: 3px 7px;
+      border: 0.5px solid var(--border-hover);
+      border-radius: var(--radius-md);
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      font-family: var(--font);
+      outline: none;
+    }
+
+    .task-due-input:focus {
+      border-color: var(--border-info);
+      box-shadow: 0 0 0 3px rgba(24,95,165,0.12);
+    }
+
+    .badge {
+      font-size: 11px;
+      padding: 3px 9px;
+      border-radius: 99px;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .badge.todo       { background: var(--bg-info);    color: var(--text-info); }
+    .badge.inprogress { background: var(--bg-warning);  color: var(--text-warning); }
+    .badge.done       { background: var(--bg-success);  color: var(--text-success); }
+
+    .task-status-select {
+      font-family: var(--font);
+      font-size: 12px;
+      padding: 4px 8px;
+      border: 0.5px solid var(--border-hover);
+      border-radius: var(--radius-md);
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      cursor: pointer;
+      outline: none;
+    }
+
+    .actions { display: flex; gap: 6px; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <h1>Task manager</h1>
+    <button class="primary" onclick="toggleForm()">+ New task</button>
+  </div>
+
+  <div class="form-card" id="form-card">
+    <div class="form-row">
+      <div class="field">
+        <label for="new-task">Task</label>
+        <input type="text" id="new-task" placeholder="Task name" />
+      </div>
+      <div class="field">
+        <label for="new-due">Due date</label>
+        <input type="date" id="new-due" />
+      </div>
+      <div class="field">
+        <label for="new-status">Status</label>
+        <select id="new-status">
+          <option>To do</option>
+          <option>In progress</option>
+          <option>Done</option>
+        </select>
+      </div>
+      <div class="field">
+        <label style="visibility:hidden">add</label>
+        <button class="primary" onclick="addTask()">Add</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-label">Total</div>
+      <div class="stat-num" id="s-total">0</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">In progress</div>
+      <div class="stat-num" id="s-prog">0</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Done</div>
+      <div class="stat-num" id="s-done">0</div>
+    </div>
+  </div>
+
+  <div class="task-list" id="task-list"></div>
+</div>
+
+<script>
+let Tasks = [];
+
+const API = "http://127.0.0.1:8000/tasks";
+
+async function loadTasks() {
+  const res = await fetch(API);
+  Tasks = await res.json();
+  render();
+}
+
+async function addTask() {
+  const task = document.getElementById("new-task").value.trim();
+  const due = document.getElementById("new-due").value;
+  const status = document.getElementById("new-status").value;
+
+  if (!task) return;
+
+  await fetch(API, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ task, due, status })
+  });
+
+  clearInputs();
+  loadTasks();
+}
+
+async function updateTask(id) {
+  const task = document.getElementById(`task-${id}`).value;
+  const due = document.getElementById(`due-${id}`).value;
+  const status = document.getElementById(`status-${id}`).value;
+
+  await fetch(`${API}/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ task, due, status })
+  });
+
+  loadTasks();
+}
+async function deleteTask(id) {
+  await fetch(`${API}/${id}`, {
+    method: "DELETE"
+  });
+
+  loadTasks();
+}
+
+function render() {
+  const list = document.getElementById("task-list");
+
+  document.getElementById("s-total").textContent = Tasks.length;
+  document.getElementById("s-prog").textContent =
+    Tasks.filter(t => t.status === "In progress").length;
+  document.getElementById("s-done").textContent =
+    Tasks.filter(t => t.status === "Done").length;
+
+  if (!Tasks.length) {
+    list.innerHTML = `<div class="empty">No tasks yet</div>`;
+    return;
+  }
+
+  list.innerHTML = Tasks.map(t => `
+    <div class="task-card">
+
+      <div>
+        <input id="task-${t.id}" value="${t.task}" class="task-name-input"/>
+        <input id="due-${t.id}" type="date" value="${t.due || ''}" class="task-due-input"/>
+      </div>
+
+      <select id="status-${t.id}" class="task-status-select">
+        <option ${t.status === "To do" ? "selected" : ""}>To do</option>
+        <option ${t.status === "In progress" ? "selected" : ""}>In progress</option>
+        <option ${t.status === "Done" ? "selected" : ""}>Done</option>
+      </select>
+
+      <button class="small" onclick="updateTask(${t.id})">Save</button>
+      <button class="danger small" onclick="deleteTask(${t.id})">Delete</button>
+
+    </div>
+  `).join('');
+}
+
+
+function clearInputs() {
+  document.getElementById("new-task").value = "";
+  document.getElementById("new-due").value = "";
+  document.getElementById("new-status").value = "To do";
+}
+
+
+document.getElementById("new-task").addEventListener("keydown", e => {
+  if (e.key === "Enter") addTask();
+});
+
+
+loadTasks();
+</script>
+</body>
+</html>
